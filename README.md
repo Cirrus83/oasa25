@@ -1,5 +1,5 @@
 # oasa25 程序说明
-提示：下载源码后，请把oasa25.xcodeproj.zip的.zip去掉（GitHub怎么不能识别这个文件，还要加上.zip后缀名……）
+提示：下载源码后，请把oasa25.xcodeproj.zip在相同目录解压再打开（GitHub为什么不能直接上传这个文件……）
 ## 基本信息
 - 程序名称：oasa25
 - 编写语言：Swift 5
