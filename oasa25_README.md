@@ -1,0 +1,151 @@
+# oasa25 程序说明(2025.12.9更新)
+2500010834 数学科学学院 陈奕辰
+## 基本信息
+- 程序名称：oasa25；
+- 编写语言：Swift 5；
+- 编译环境：
+  - IDE：Xcode Version 26.0.1 (17A400)；
+  - macOS：Tahoe 26.0.1 (25A362)；
+  - 设备：MacBook Air (13英寸, M3, 2024年)；
+- 借助AI：DeepSeek；
+  - 主要用途：
+    - 在原来代码的基础上进行优化；
+    - 讲解Swift语法；
+    - 修复语法错误；
+    - 协助给程序取名；
+      - "oasa"(“おアサ”)是“大きいアサインメント”（“大作业”）的缩略；
+      - "25"是我的数分I期中考试成绩。
+- 程序特色：
+  - 使用上：
+    - 友好的GUI界面；
+      - 包含分栏显示；
+      - 很多图标；
+    - 二次确认，防止误操作；
+    - 完善的存档保存/另存为/读取功能；
+    - 清晰的状态显示；
+    - 支持历史记录查看；
+    - 合法路径绿色高亮显示，被阻挡的路径红色高亮显示；
+    - 支持自由调节蒙特卡洛算法评分参数；
+    - 终端输出蒙特卡洛方法日志；
+    - 利用⌘+N进行多窗口同时操作。
+  - 技术上：
+    - 使用SwiftUI的现成控件实现GUI界面，减少所需代码；
+    - 使用多个状态变量，状态划分清晰；
+    - 代码分成不同`struct`，分工实现不同功能；
+    - 变量名、函数名等清晰易读（感谢DeepSeek）；
+    - 并行处理，提高运行效率；
+    - 实现蒙特卡洛算法；
+    - 缺点：不管怎么调，算法都有点傻傻的，只比随机算法好一点点，在Botzone上被打得毫无还手之力（期末了😭难debug）。
+## 文件组成
+- `Assets.xcassets`：存储程序的图标；
+  - 来自教学网上“我的成绩”界面的截图；
+- `ContentView.swift`：存储程序的主要源代码；
+- `oasa25样本（若无法运行，则在本机编译）.app`：macOS的应用程序包；
+- `oasa25App.swift`：程序主结构（实际代码较少，仅调用`ContentView()`，不涉及具体实现）；
+- `oasa25_README.md`：程序说明（本文件）。
+- `oasa25.xcodeproj`：Xcode项目文件。
+- `自动移植版.cpp`：使用DeepSeek帮忙移植的C++版本，用于Botzone对局（期末周😭救命）。
+
+下面重点解说`ContentView.swift`的有关内容：
+## 程序结构
+- `import`部分：
+  - `Combine`：用于实现`ObservableObject`类型的`GameState`；
+  - `SwiftUI`：提供程序的UI控件；
+  - `UniformTypeIdentifiers`：用于存取文件时对文件类型的规定；
+- `enum GamePhase:`：设定三个游戏阶段的值（相当于C++的`#define`）；
+  - 选择棋子阶段`selectPiece`；
+  - 移动棋子阶段`movePiece`；
+  - 放置障碍物阶段`placeArrow`；
+- `struct HistoryEntry`：历史记录数据结构；
+  - id+字符串；
+- `struct gameData`：规定游戏存档的结构；
+  - 棋盘数据`chessBoard`（二维数组）；
+  - 回合数据`blackRound`（Bool值）；
+  - 历史记录数据`history`（HistoryEntry数组）；
+  - 选中棋子位置`selectedPieceRow`和`selectedPieceCol`（整数）；
+  - 阶段数据`gamePhase`；
+  - 上次计算的可用路径`availableMoves`（二维数组）；
+    - 读档后无需再次计算；
+  - 游戏结束状态`isGameOver`（Bool值）；
+  - 自动下棋选项`blackStrategy`和`whiteStrategy`（字符串）；
+  - 当前回合数`roundNum`（整数）；
+  - 蒙特卡洛方法计算结果`mcList`（数组）；
+  - 控制面板参数值`blackControlFactor`、`blackSafetyFactor`、`blackSurroundFactor`、`blackCenterFactor`、`whiteControlFactor`、`whiteSafetyFactor`、`whiteSurroundFactor`和`whiteCenterFactor`（均为双精度浮点类型）；
+- `class GameState`：游戏状态环境对象
+  - 声明并初始化各个状态变量（详细列表如上）；
+- `struct GameManager`：游戏逻辑管理器；
+  - `func saveGame`：借助Swift的`NSSavePanel()`功能进行存档的保存（同时会调用自定义的`saveChessBoardToJSON()`）；
+  - `func loadGame`：借助Swift的`NSOpenPanel()`功能进行存档的读取（同时会调用自定义的`loadChessBoardFromJSON()`）；
+  - `func saveChessBoardToJSON`：借助Swift的`JSONEncoder()`，保存当前棋局为`.json`存档；
+  - `func loadChessBoardFromJSON`：借助Swift的`JSONDecoder()`，从`.json`存档中读取各个变量，还原棋局；
+  - `func initializeChessBoard`：新建游戏时的棋盘初始化；
+  - `func addHistory`：将最近一步操作插入到`history`字符串组的索引`0`位置的一个简单函数；
+  - `func calculateAvailableMoves`：计算可移动的位置，用于给设定按钮状态和染色提供数据；
+  - `func getAllAvailablePieces`：获取所有可用的棋子位置，用于设定按钮状态；
+  - `func getAllCounterPieces`：除了参数相反，和上面函数功能相同；
+  - `func getAllAvailableMoves`：获取所有可移动/可放置障碍物的位置，染色；
+  - `func checkWinCondition`和`func checkAndHandleWinCondition`：检查胜利；
+  - `func handleSquareTap`：处理格子点击；
+  - 蒙特卡洛算法实现部分
+    - `private func generateMcListForCurrentTurn`：更新`mcList`状态变量
+    - `private func findBestMoveWithMonteCarlo`：通过给定第一行动回合+往下随机8个回合（并重走30次）计算平均得分，为上述函数提供计算结果；
+    - `private func getAllPossibleMoves`：模拟完整的一个回合的可行操作方案；
+    - `private func simulateRandomGame`：模拟完整一个回合的随机下棋过程；
+    - `private func getRandomMove`：随机选取一个回合的下棋方案（返回值：`piece: (Int, Int), target: (Int, Int), arrow: (Int, Int)`）
+    - `private func isGameOver`：检查游戏是否结束（模拟下棋版）；
+    - `private func calculateFinalScore`：
+      - 若中途获胜：返回`1.0`或`-1.0`；
+      - 否则使用下面函数的返回值；
+    - `private func generateRandomMcList`：生成随机走法列表（备用）；
+      - 因为Swift要防止使用空值，所以需要一个这样的函数来保证每种情况都有值，实际上不会被调用；
+    - `private func evaluateBoard`：3项评估分数求和+归一化到[-1,1]；
+    - `private func calculateSimuMoves`：计算可以移动的方案（不修改GameState版）；
+    - `private func mcSelect`：基于已生成的`mcList`执行选择；
+    - `private func mcMove`：基于已生成的`mcList`执行移动；
+    - `private func mcPlace`：基于已生成的`mcList`放置障碍物；
+  - 综合的自动下棋：`func autoOperate`
+  - 随机下棋：
+    - `private func randomSelect`；
+    - `private func randomMove`；
+    - `private func randomPlace`；
+  - 局势评估算法：
+    - `private func controlScore`：控制分=倍率*所有棋子可移动格子数目之和；
+    - `private func safetyScore`：安全分=每个棋子求和：
+      - +倍率*距离边界的最小距离；
+        - 若被完全包围：-包围惩罚；
+        - 否则：+倍率*所有棋子可移动格子数目之和；（怎么感觉和上面控制分有点重复）
+    - `private func centerScore`：中心分=每个棋子求和：
+      - 若在中心：+倍率*5；
+      - +(10-离中心点距离)；
+- `struct ChessSquareView`：棋盘格子视图；
+  - 实现单个棋盘格子的显示；
+  - `func getSquareColor`：染色；
+  - `func isInteractive`：设定按钮状态；
+- `struct ChessBoardRowView`：棋盘行视图；
+  - 实现棋盘单行的显示；
+  - 调用`struct ChessSquareView`；
+- `struct ChessBoardView`：棋盘视图；
+  - 实现棋盘的完整显示；
+  - 调用`struct ChessBoardRowView`；
+- `struct MenuButtonView`：菜单按钮视图；
+  - 作为定义主菜单按钮的模板，避免代码的大量重复；
+- `struct SidebarView`：左侧栏视图；
+  - `var gameInfoView`：显示当前存档路径、当前回合、当前阶段、历史操作；
+  - `var phaseDescription`：把阶段的代号转换成文字描述；
+  - `var welcomeView`：显示第一局游戏开始前的引导信息；
+- `struct ParameterSliderView`：负责单一滑块组件；
+- `struct ParameterSettingsView`：生成完整滑块界面；
+- `struct RightView`：右侧栏视图；
+  - 自动下棋控制面板，支持调节参数；
+- `struct MainMenuView`：主菜单视图；
+  - 实现主菜单的显示；
+  - 多次调用`struct MenuButtonView`，实现各个菜单按钮；
+  - 依据状态变量的不同，显示不同的按钮；
+- `struct ContentView`：主视图。
+  - 划分窗口结构：
+    - 调用`SidebarView`，实现左侧栏的状态显示；
+    - 调用`MainMenuView`，实现左下角的菜单控制；
+    - 调用`ChessBoardView`，实现右侧的棋盘显示。
+    - 调用`RightView`；
+  - 定义函数`private func setWindowTitle`
+    - 使用`.onAppear`在程序启动时设置窗口标题。

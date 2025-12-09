@@ -2,7 +2,7 @@
 //  oasa25App.swift
 //  oasa25
 //
-//  Created by 陈奕辰 on 2025/11/12.
+//  Created by Cirrus on 2025/11/12.
 //
 
 import SwiftUI
